@@ -3,9 +3,7 @@ require 'kafka/logger'
 require 'kafka/version'
 
 module Kafka
-
-  @logger = Kafka::Logger.new(nil)
-
+  
   def self.producer(**options)
     Producer.new(**options)
   end

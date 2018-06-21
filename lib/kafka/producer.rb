@@ -1,11 +1,11 @@
-require 'kafka/broker'
+require 'kafka/cluster'
 
 module Kafka
 
   class Producer
 
     ACKS = [:all, -1, 0, 1]
-    COMPRESSION_TYPE = { none: 'none', lz4: 'lz4' }
+    COMPRESSION_TYPE = { none: 'none', gzip: 'gzip', snappy: 'snappy', lz4: 'lz4' }
 
     def initialize(**options)
       producer_options = {
@@ -39,13 +39,20 @@ module Kafka
           transaction_timeout_ms: 60 * 1000,
           transactional_id: nil
       }.strictly_update!(options)
+
+      producer_options.each do |key, value|
+        instance_variable_set("@#{key}", value)
+      end
+
+      Kafka.logger.debug("merong")
+
+      @brokers = Cluster.new(**options)
+
     end
 
-    producer_options.each do |key, value|
-      instance_variable_set("@#{key}", value)
-    end
+    def send(message:, topic:)
 
-    @brokers = BrokerBuilder.new(@connection_optins)
+    end
 
   end
 
