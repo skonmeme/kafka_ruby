@@ -1,9 +1,10 @@
 require 'hash'
+require 'kafka/error'
 require 'kafka/logger'
 require 'kafka/version'
 
 module Kafka
-  
+
   def self.producer(**options)
     Producer.new(**options)
   end

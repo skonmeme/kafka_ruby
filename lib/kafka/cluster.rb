@@ -1,3 +1,4 @@
+require 'uri'
 require 'kafka/broker'
 
 module Kafka
@@ -5,7 +6,7 @@ module Kafka
   class Cluster
 
     DEFALUT_PORT = "9092"
-    SECURITY_PROTOCOL = { PLAINTEXT: 'PLAINTEXT' }
+    SECURITY_PROTOCOL = { PLAINTEXT: 'plaintext', SSL: 'ssl', plaintext: 'plaintext', ssl: 'ssl' }
     SSL_PROTOCOLS = { TLS_1_2: 'TLSv1.2', TLS_1_1: 'TLSv1.1', TLS_1: 'TLSv1' }
 
     def initialize(**options)
@@ -35,18 +36,26 @@ module Kafka
           ssl_trustmanager_algorithm: :PKIX
       }.strictly_update!(options)
 
-      @servers = parse_servers(options[:bootstrap_servers])
+      @server_uri = parse_servers(options[:bootstrap_servers])
+      puts @server_uri
       connection_options.each do |key, value|
         instance_variable_set("@#{key}", value)
       end
     end
 
     def parse_servers(servers)
-      servers = [servers] unless servers.is_a?
-      servers.map { |server| server.split(':') }.map do |server|
-        host, port = server
-        port = server[1].nil? ? DEFAULT_PORT, server[1]
-        host, port = (server.size == 2) ? (server[0], server[1]) : server + [DEFAULT_PORT]
+      servers = servers.split(",") unless servers.is_a?
+      servers.map do |server|
+        server = "kafka://" + server unless server.include?("://")
+        uri = URI.parse(server)
+        uri.port ||= DEFAULT_PORT
+        uri.scheme = case uri.scheme
+                     when "plaintext"
+                       "kafka"
+                     when "ssl"
+                       "kafka+ssl"
+                     end
+        raise WrongURI.new(uri) unless SECURITY_PROTOCOL[uri.scheme]
       end
     end
 
