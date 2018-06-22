@@ -9,6 +9,8 @@ module Kafka
   class WrongURI < Error
 
     def initialize(uri)
+      super
+
       @uri = uri
     end
 

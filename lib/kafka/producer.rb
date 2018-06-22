@@ -44,8 +44,6 @@ module Kafka
         instance_variable_set("@#{key}", value)
       end
 
-      Kafka.logger.debug("merong")
-
       @brokers = Cluster.new(**options)
 
     end

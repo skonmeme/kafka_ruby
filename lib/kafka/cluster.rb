@@ -5,7 +5,7 @@ module Kafka
 
   class Cluster
 
-    DEFALUT_PORT = "9092"
+    DEFAULT_PORT = "9092"
     SECURITY_PROTOCOL = { PLAINTEXT: 'plaintext', SSL: 'ssl', plaintext: 'plaintext', ssl: 'ssl' }
     SSL_PROTOCOLS = { TLS_1_2: 'TLSv1.2', TLS_1_1: 'TLSv1.1', TLS_1: 'TLSv1' }
 
