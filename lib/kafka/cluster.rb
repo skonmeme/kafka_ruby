@@ -36,15 +36,17 @@ module Kafka
           ssl_trustmanager_algorithm: :PKIX
       }.strictly_update!(options)
 
+      raise Kafka::NoBroker unless options[:bootstrap_servers]
       @server_uri = parse_servers(options[:bootstrap_servers])
       puts @server_uri
+
       connection_options.each do |key, value|
         instance_variable_set("@#{key}", value)
       end
     end
 
     def parse_servers(servers)
-      servers = servers.split(",") unless servers.is_a?
+      servers = servers.split(",") if servers.is_a?(String)
       servers.map do |server|
         server = "kafka://" + server unless server.include?("://")
         uri = URI.parse(server)
@@ -55,7 +57,7 @@ module Kafka
                      when "ssl"
                        "kafka+ssl"
                      end
-        raise WrongURI.new(uri) unless SECURITY_PROTOCOL[uri.scheme]
+        raise Kafka::WrongURI.new(uri) unless SECURITY_PROTOCOL[uri.scheme]
       end
     end
 
