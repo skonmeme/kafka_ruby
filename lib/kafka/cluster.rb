@@ -36,13 +36,18 @@ module Kafka
           ssl_trustmanager_algorithm: :PKIX
       }.strictly_update!(options)
 
+      # set options
       raise Kafka::NoBroker unless options[:bootstrap_servers]
-      @server_uri = parse_servers(options[:bootstrap_servers])
-      puts @server_uri
-
+      @servers = parse_servers(options[:bootstrap_servers])
       connection_options.each do |key, value|
         instance_variable_set("@#{key}", value)
       end
+
+      # fetch broker information
+      @brokers = @servers.shuffle.map do |server|
+        broker =
+      end
+
     end
 
     def parse_servers(servers)
@@ -56,8 +61,10 @@ module Kafka
                        "kafka"
                      when "ssl"
                        "kafka+ssl"
+                     else
+                       "kafka"
                      end
-        raise Kafka::WrongURI.new(uri) unless SECURITY_PROTOCOL[uri.scheme]
+        raise Kafka::WrongURI.new(uri) unless SECURITY_PROTOCOL[uri.scheme.to_sym] if uri.scheme
       end
     end
 

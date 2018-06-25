@@ -1,6 +1,11 @@
 module Kafka
 
   class Error < StandardError
+
+    def initialize(data)
+      STDERR.puts data
+    end
+
   end
 
   class NoBroker < Error
@@ -8,10 +13,9 @@ module Kafka
 
   class WrongURI < Error
 
-    def initialize(uri)
+    def initialize(data)
+      @uri = data
       super
-
-      @uri = uri
     end
 
   end
