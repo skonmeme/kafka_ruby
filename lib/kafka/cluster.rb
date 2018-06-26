@@ -11,6 +11,8 @@ module Kafka
 
     def initialize(**options)
       connection_options = {
+          bootstrap_servers: nil,
+          client_id: 'kafka_ruby',
           ssl_key_password: nil,
           ssl_keystore_location: nil,
           ssl_keystore_password: nil,
@@ -37,15 +39,15 @@ module Kafka
       }.strictly_update!(options)
 
       # set options
-      raise Kafka::NoBroker unless options[:bootstrap_servers]
-      @servers = parse_servers(options[:bootstrap_servers])
+      raise Kafka::NoBroker unless connection_options[:bootstrap_servers]
+      connection_options[:bootstrap_servers] = parse_servers(connection_options[:bootstrap_servers])
       connection_options.each do |key, value|
         instance_variable_set("@#{key}", value)
       end
 
       # fetch broker information
-      @brokers = @servers.shuffle.map do |server|
-        broker =
+      @brokers = @bootstrap_servers.shuffle.map do |server|
+        metadata = Protocol::Metadata.request
       end
 
     end
