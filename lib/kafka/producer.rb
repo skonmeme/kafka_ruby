@@ -38,11 +38,7 @@ module Kafka
           retry_backoff_ms: 100,
           transaction_timeout_ms: 60 * 1000,
           transactional_id: nil
-      }.strictly_update!(options)
-
-      producer_options.each do |key, value|
-        instance_variable_set("@#{key}", value)
-      end
+      }.strictly_update!(options).each { |key, value| instance_variable_set("@#{key}", value) }
 
       @brokers = Cluster.new(**options)
 
@@ -52,6 +48,9 @@ module Kafka
 
     end
 
+    def to_instance
+
+    end
   end
 
 end
