@@ -8,6 +8,10 @@ module Kafka
     COMPRESSION_TYPE = { none: 'none', gzip: 'gzip', snappy: 'snappy', lz4: 'lz4' }
 
     def initialize(**options)
+      required = {
+          topic: nil,
+          bootstrap_servers: nil
+      }.strictly_update!(options).required.each { |key, value| instance_variable_set("@#{key}", value) }
       producer_options = {
           key_serializer: :default,
           value_serializer: :default,
@@ -40,7 +44,7 @@ module Kafka
           transactional_id: nil
       }.strictly_update!(options).each { |key, value| instance_variable_set("@#{key}", value) }
 
-      @brokers = Cluster.new(**options)
+      @brokers = Cluster.new(topic: @topic, bootstrap_servers: @bootstrap_servers, **options)
 
     end
 

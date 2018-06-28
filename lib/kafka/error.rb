@@ -2,8 +2,8 @@ module Kafka
 
   class Error < StandardError
 
-    def initialize(data)
-      STDERR.puts data
+    def initialize(data = nil)
+      super
     end
 
   end
@@ -16,6 +16,15 @@ module Kafka
     def initialize(data)
       @uri = data
       super
+    end
+
+  end
+
+  class MissingRequiredArugment < Error
+
+    def initialize(data)
+      @argument = data
+      super(data)
     end
 
   end

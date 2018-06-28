@@ -6,67 +6,51 @@ module Kafka
   class Cluster
 
     DEFAULT_PORT = "9092"
-    SECURITY_PROTOCOL = { PLAINTEXT: 'plaintext', SSL: 'ssl', plaintext: 'plaintext', ssl: 'ssl' }
+    SECURITY_PROTOCOL = { plaintext: :PLAINTEXT, ssl: :SSL, sasl_plaintext: :SASL_PLAINTEXT, sasl_ssl: :SASL_SSL }
     SSL_PROTOCOLS = { TLS_1_2: 'TLSv1.2', TLS_1_1: 'TLSv1.1', TLS_1: 'TLSv1' }
 
     def initialize(**options)
       connection_options = {
+          topic: nil,
           bootstrap_servers: nil,
-          client_id: 'kafka_ruby',
-          ssl_key_password: nil,
-          ssl_keystore_location: nil,
-          ssl_keystore_password: nil,
-          ssl_truststore_location: nil,
-          ssl_truststore_password: nil,
+          security_protocol: :PLAINTEXT
+      }.strictly_update!(options).required.each { |key, value| instance_variable_set("@#{key}", value) }
+      @sasl_authenticator = {
+          sasl_kerberos_ticket_renew_window_factor: 0.8,
           sasl_jaas_config: nil,
           sasl_kerberos_service_name: nil,
-          sasl__mechanism: :GSSAPI,
-          security_protocol: :PLAINTEXT,
-          ssl_enabled_protocols: [:TLS_1_2, :TLS_1_1, :TLS_1],
-          ssl_keystore_type: :JKS,
-          ssl_protocol: :TLS,
-          ssl_provider: nil,
-          ssl_truststore_type: :JKS,
+          sasl_mechanism: :GSSAPI,
           sasl_kerberos_kinit_cmd: '/usr/bin/kinit',
           sasl_kerberos_min_time_before_relogin: 60 * 1000,
-          sasl_kerberos_ticket_renew_jitter: 0.05,
-          sasl_kerberos_ticket_renew_window_factor: 0.8,
-          ssl_cipher_suites: [],
-          ssl_endpoint_identification_algorithm: nil,
-          ssl_keymanager_algorithm: :X509,
-          ssl_secure_random_implementation: nil,
-          ssl_trustmanager_algorithm: :PKIX
+          sasl_kerberos_ticket_renew_jitter: 0.05
       }.strictly_update!(options)
 
-      # set options
-      raise Kafka::NoBroker unless connection_options[:bootstrap_servers]
-      connection_options[:bootstrap_servers] = parse_servers(connection_options[:bootstrap_servers])
-      connection_options.each do |key, value|
-        instance_variable_set("@#{key}", value)
-      end
+      raise Kafka::NoBroker unless @bootstrap_servers
 
       # fetch broker information
-      @brokers = @bootstrap_servers.shuffle.map do |server|
-        metadata = Protocol::Metadata.request
+      @brokers = bootstrap_servers.shuffle.map do |bootstrap_server|
+        broker = Borker.new(options.merge({host: bootstrap_server.host, port: bootstrap_server.port}))
+        metadata = Protocol::Metadata.request(@topic)
       end
 
     end
 
-    def parse_servers(servers)
-      servers = servers.split(",") if servers.is_a?(String)
-      servers.map do |server|
-        server = "kafka://" + server unless server.include?("://")
+    def bootstrap_servers
+      servers = servers.split(",") if @bootstrap_servers.is_a?(String)
+      @bootstrap_servers = servers.map do |server|
         uri = URI.parse(server)
         uri.port ||= DEFAULT_PORT
-        uri.scheme = case uri.scheme
-                     when "plaintext"
-                       "kafka"
-                     when "ssl"
-                       "kafka+ssl"
+        uri.scheme = case @security_protocol
+                     when :SSL
+                       "ssl"
+                     when :SASL_PLAINTEXT
+                       "sasl_plaintext"
+                     when :SASL_SSL
+                       "sasl_ssl"
                      else
-                       "kafka"
+                       "plaintext"
                      end
-        raise Kafka::WrongURI.new(uri) unless SECURITY_PROTOCOL[uri.scheme.to_sym] if uri.scheme
+        raise Kafka::WrongURI.new(uri) if uri.scheme.nil? || SECURITY_PROTOCOL[uri.scheme.to_sym].nil?
       end
     end
 
