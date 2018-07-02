@@ -1,3 +1,4 @@
+require 'kafka/network/socket'
 
 module Kafka
 
@@ -41,9 +42,10 @@ module Kafka
     end
 
     def connect
+      Kafka.logger.debug("Connecting to #{@host}:#{@port} with client id #{@client_id}")
+      @socket = Network::Socket.connect(@host, @port, @ssl_context, timeout: @connect_timeout)
     end
 
-    end
     def close
       Kafka.logger.debug("Closing socket to #{@host}:#{@port}")
       @socket.close if @socket
