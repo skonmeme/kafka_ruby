@@ -29,4 +29,7 @@ module Kafka
 
   end
 
+  class TimeoutToConnect < Error
+  end
+
 end

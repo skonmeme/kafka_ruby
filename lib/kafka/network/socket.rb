@@ -24,6 +24,7 @@ module Kafka
             # immediatelyit will raise an IO::WaitWritable (Errno::EINPROGRESS)
             # indicating the connection is in progress.
             socket.connect_nonblock(sockaddr)
+            Kafka.logger.info("Connected to #{host}:#{port}")
 
           rescue IO::WaitWritable
             # IO.select will block until the socket is writable or the timeout
@@ -32,18 +33,20 @@ module Kafka
               begin
                 # Verify there is now a good connection
                 socket.connect_nonblock(sockaddr)
+                Kafka.logger.info("Connected to #{host}:#{port}")
               rescue Errno::EISCONN
-                # Good news everybody, the socket is connected!
+                Kafka.logger.info("Already connected to #{host}:#{port}")
               rescue
-                # An unexpected exception was raised - the connection is no good.
+                Kafka.logger.info("Cannot connect to #{host}:#{port}")
                 socket.close
                 raise
               end
             else
               # IO.select returns nil when the socket is not ready before timeout
               # seconds have elapsed
+              Kafka.logger.info("Time out to connect to #{host}:#{port}")
               socket.close
-              raise "Connection timeout"
+              raise Kafka::TimeoutToConnect "Connection timeout"
             end
           end
         end
